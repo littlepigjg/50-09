@@ -1,7 +1,9 @@
-import type { Level, LevelProgress } from './types';
+import type { Level, LevelProgress, TutorialLevel, TutorialProgress } from './types';
 
 const PROGRESS_KEY = 'coderobot_progress_v1';
 const CUSTOM_LEVELS_KEY = 'coderobot_custom_levels_v1';
+const TUTORIALS_KEY = 'coderobot_tutorials_v1';
+const TUTORIAL_PROGRESS_KEY = 'coderobot_tutorial_progress_v1';
 
 export interface ProgressData {
   [levelId: string]: LevelProgress;
@@ -134,4 +136,117 @@ export async function shareLevel(level: Level): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export function saveTutorial(tutorial: TutorialLevel): void {
+  try {
+    const tutorials = loadTutorials();
+    const existingIndex = tutorials.findIndex((t) => t.id === tutorial.id);
+    if (existingIndex >= 0) {
+      tutorials[existingIndex] = tutorial;
+    } else {
+      tutorials.push(tutorial);
+    }
+    localStorage.setItem(TUTORIALS_KEY, JSON.stringify(tutorials));
+  } catch (e) {
+    console.error('Failed to save tutorial:', e);
+  }
+}
+
+export function loadTutorials(): TutorialLevel[] {
+  try {
+    const data = localStorage.getItem(TUTORIALS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function deleteTutorial(tutorialId: string): void {
+  try {
+    const tutorials = loadTutorials().filter((t) => t.id !== tutorialId);
+    localStorage.setItem(TUTORIALS_KEY, JSON.stringify(tutorials));
+  } catch (e) {
+    console.error('Failed to delete tutorial:', e);
+  }
+}
+
+export function exportTutorialToJson(tutorial: TutorialLevel): string {
+  return JSON.stringify(tutorial, null, 2);
+}
+
+export function importTutorialFromJson(json: string): TutorialLevel | null {
+  try {
+    const data = JSON.parse(json);
+    if (
+      data.id &&
+      data.name &&
+      data.steps &&
+      Array.isArray(data.steps) &&
+      data.level
+    ) {
+      return data as TutorialLevel;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function downloadTutorial(tutorial: TutorialLevel): void {
+  const json = exportTutorialToJson(tutorial);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `tutorial_${tutorial.name.replace(/\s+/g, '_')}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export async function shareTutorial(tutorial: TutorialLevel): Promise<boolean> {
+  const json = exportTutorialToJson(tutorial);
+  try {
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(json);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export function loadTutorialProgress(): Record<string, TutorialProgress> {
+  try {
+    const data = localStorage.getItem(TUTORIAL_PROGRESS_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveTutorialProgress(progress: Record<string, TutorialProgress>): void {
+  try {
+    localStorage.setItem(TUTORIAL_PROGRESS_KEY, JSON.stringify(progress));
+  } catch (e) {
+    console.error('Failed to save tutorial progress:', e);
+  }
+}
+
+export function updateTutorialProgress(
+  tutorialId: string,
+  stepProgress: TutorialProgress
+): Record<string, TutorialProgress> {
+  const allProgress = loadTutorialProgress();
+  allProgress[tutorialId] = stepProgress;
+  saveTutorialProgress(allProgress);
+  return allProgress;
+}
+
+export function getTutorialProgress(tutorialId: string): TutorialProgress | undefined {
+  const allProgress = loadTutorialProgress();
+  return allProgress[tutorialId];
 }

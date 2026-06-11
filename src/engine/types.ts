@@ -101,7 +101,7 @@ export interface LevelProgress {
   bestSteps: number;
 }
 
-export type GameMode = 'menu' | 'play' | 'editor';
+export type GameMode = 'menu' | 'play' | 'editor' | 'tutorial-menu' | 'tutorial-play' | 'tutorial-editor';
 
 export type EditorTool =
   | 'select'
@@ -111,3 +111,74 @@ export type EditorTool =
   | 'star'
   | 'pit'
   | 'erase';
+
+export type UnderstandingCheckType =
+  | 'usesBlockType'
+  | 'minBlockCount'
+  | 'maxBlockCount'
+  | 'reachesGoal'
+  | 'collectsAllStars'
+  | 'noSpecificBlock'
+  | 'usesLoop'
+  | 'usesCondition'
+  | 'usesFunction';
+
+export interface UnderstandingCheck {
+  id: string;
+  type: UnderstandingCheckType;
+  description: string;
+  blockType?: BlockType;
+  count?: number;
+  required: boolean;
+}
+
+export interface TutorialExampleCode {
+  explanation: string;
+  blocks: ProgramBlock[];
+}
+
+export interface TutorialStep {
+  id: string;
+  title: string;
+  learningObjective: string;
+  explanation: string;
+  keyConcepts: string[];
+  exampleCode?: TutorialExampleCode;
+  practiceTask: string;
+  checks: UnderstandingCheck[];
+  feedbackCorrect?: string;
+  feedbackWrong?: string;
+}
+
+export interface TutorialLevel {
+  id: string;
+  name: string;
+  description: string;
+  difficulty: number;
+  category: string;
+  estimatedMinutes: number;
+  prerequisites: string[];
+  steps: TutorialStep[];
+  level: Level;
+  author?: string;
+  createdAt?: number;
+}
+
+export type TutorialGameMode = 'menu' | 'play' | 'editor';
+
+export interface TutorialStepProgress {
+  stepId: string;
+  completed: boolean;
+  attempts: number;
+  passedChecks: string[];
+  failedChecks: string[];
+}
+
+export interface TutorialProgress {
+  tutorialId: string;
+  currentStepIndex: number;
+  steps: TutorialStepProgress[];
+  completed: boolean;
+  startedAt?: number;
+  completedAt?: number;
+}
